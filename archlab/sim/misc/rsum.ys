@@ -1,0 +1,44 @@
+# DESC:
+# 	recursively sums the elements of a linked node list
+#	small example list is set up
+
+.pos 0
+	irmovq 	Stack, %rsp		# move Stack to stack ptr
+	rrmovq 	%rsp, %rbp		# copy stack ptr to frame ptr
+main:
+	irmovq 	ele1, %rdi		# ls = ele1
+	pushq	%rdi			# push ls onto stack
+	xorq	%rax, %rax		# count <- 0
+	call	rsum_list
+	halt
+
+.align 8
+ele1:		.quad 0xa00
+			.quad ele2
+ele2:		.quad 0x0b0
+			.quad ele3
+ele3:		.quad 0x00c
+			.quad 0
+
+rsum_list:
+	pushq	%rbp
+	rrmovq	%rsp, %rbp
+	pushq	%rbx			# callee-save %rbx
+	mrmovq	16(%rbp), %rdi	# %rdi = ls
+	andq	%rdi, %rdi		# test if ls == 0
+	mrmovq	(%rdi), %rbx	# %rbx = val = ls->val
+	je 		finish			# if 0, goto finish
+	mrmovq	8(%rdi), %rdi	# ls = ls->next
+	pushq	%rdi			# callee-save %rdi
+							# used as recursive arg
+	call 	rsum_list
+	addq	%rbx, %rax		# add val to return val
+							# from recursive call
+	popq	%rdi			# cleanup %rdi
+finish:
+	popq	%rbx
+	popq	%rbp
+	ret
+
+.pos 0x200
+Stack:

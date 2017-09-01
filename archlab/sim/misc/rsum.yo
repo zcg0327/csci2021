@@ -1,0 +1,39 @@
+0x000:                      | .pos 0
+0x000: 30f40002000000000000 | 	irmovq 	Stack, %rsp		# move Stack to stack ptr
+0x00a: 2045                 | 	rrmovq 	%rsp, %rbp		# copy stack ptr to frame ptr
+0x00c: 30f72800000000000000 | 	irmovq 	ele1, %rdi		# ls = ele1
+0x016: a07f                 | 	pushq	%rdi			# push ls onto stack
+0x018: 6300                 | 	xorq	%rax, %rax
+0x01a: 805800000000000000   | 	call	rsum_list
+0x023: 00                   | 	halt
+                            | 
+0x028:                      | .align 8
+0x028: 000a000000000000     | ele1:		.quad 0xa00
+0x030: 3800000000000000     | 			.quad ele2
+0x038: b000000000000000     | ele2:		.quad 0x0b0
+0x040: 4800000000000000     | 			.quad ele3
+0x048: 0c00000000000000     | ele3:		.quad 0x00c
+0x050: 0000000000000000     | 			.quad 0
+                            | 
+0x058:                      | rsum_list:
+0x058: a05f                 | 	pushq	%rbp
+0x05a: 2045                 | 	rrmovq	%rsp, %rbp
+0x05c: a03f                 | 	pushq	%rbx			# callee-save %rbx
+0x05e: 50751000000000000000 | 	mrmovq	16(%rbp), %rdi	# %rdi = ls
+0x068: 6277                 | 	andq	%rdi, %rdi		# test if ls == 0
+0x06a: 50370000000000000000 | 	mrmovq	(%rdi), %rbx	# %rbx = val = ls->val
+0x074: 739600000000000000   | 	je 		finish			# if 0, goto finish
+0x07d: 50770800000000000000 | 	mrmovq	8(%rdi), %rdi	# ls = ls->next
+0x087: a07f                 | 	pushq	%rdi			# callee-save %rdi
+                            | 							# used as recursive arg
+0x089: 805800000000000000   | 	call 	rsum_list
+0x092: 6030                 | 	addq	%rbx, %rax		# add val to return val
+                            | 							# from recursive call
+0x094: b07f                 | 	popq	%rdi			# cleanup %rdi
+0x096:                      | finish:
+0x096: b03f                 | 	popq	%rbx
+0x098: b05f                 | 	popq	%rbp
+0x09a: 90                   | 	ret
+                            | 
+0x200:                      | .pos 0x200
+0x200:                      | Stack:

@@ -1,0 +1,51 @@
+0x000:                      | .pos 0
+0x000: 30f40002000000000000 | 	irmovq	Stack, %rsp
+0x00a: 2045                 | 	rrmovq	%rsp, %rbp
+0x00c: 704800000000000000   | 	jmp main
+                            | 
+0x018:                      | .align 8
+0x018:                      | src:
+0x018: 0100000000000000     | 	.quad 0x001
+0x020: 0200000000000000     | 	.quad 0x002
+0x028: 0400000000000000     | 	.quad 0x004
+0x030:                      | dest:
+0x030: 1101000000000000     | 	.quad 0x111
+0x038: 2202000000000000     | 	.quad 0x222
+0x040: 3303000000000000     | 	.quad 0x333
+                            | 
+0x048:                      | main:
+0x048: 30f00300000000000000 | 	irmovq	$3, %rax		# push len
+0x052: a00f                 | 	pushq	%rax
+0x054: 30f03000000000000000 | 	irmovq	dest, %rax		# push dest
+0x05e: a00f                 | 	pushq	%rax
+0x060: 30f01800000000000000 | 	irmovq	src, %rax		# push src
+0x06a: a00f                 | 	pushq	%rax
+0x06c: 807600000000000000   | 	call	copy_block
+0x075: 00                   | 	halt
+                            | 
+0x076:                      | copy_block:
+0x076: a05f                 | 	pushq	%rbp
+0x078: 2045                 | 	rrmovq	%rsp, %rbp
+0x07a: 6300                 | 	xorq	%rax, %rax		# %rax = result = 0
+0x07c: 50351000000000000000 | 	mrmovq	16(%rbp), %rbx	# %rbx = src
+0x086: 50151800000000000000 | 	mrmovq	24(%rbp), %rcx	# %rcx = dest
+0x090: 50252000000000000000 | 	mrmovq	32(%rbp), %rdx	# %rdx = len
+0x09a: 6222                 | 	andq	%rdx, %rdx		# test if len == 0
+0x09c: 74a500000000000000   | 	jne loop				# if 0, goto finish
+0x0a5:                      | loop:
+0x0a5: 50630000000000000000 | 	mrmovq	(%rbx), %rsi	# %rsi = val = *src
+0x0af: 40610000000000000000 | 	rmmovq	%rsi, (%rcx)	# *dest = val
+0x0b9: 30f70800000000000000 | 	irmovq	$8, %rdi
+0x0c3: 6073                 | 	addq	%rdi, %rbx		# increment src
+0x0c5: 6071                 | 	addq	%rdi, %rcx		# increment dest
+0x0c7: 6360                 | 	xorq	%rsi, %rax		# result = result ^ val
+0x0c9: 30f70100000000000000 | 	irmovq	$1, %rdi
+0x0d3: 6172                 | 	subq	%rdi, %rdx		# decrement len
+0x0d5: 74a500000000000000   | 	jne loop				# if len == 0, goto finish
+0x0de:                      | finish:
+0x0de: 2054                 | 	rrmovq	%rbp, %rsp
+0x0e0: b05f                 | 	popq	%rbp
+0x0e2: 90                   | 	ret
+                            | 
+0x200:                      | .pos 0x200
+0x200:                      | Stack:

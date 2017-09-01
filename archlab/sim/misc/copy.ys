@@ -1,0 +1,59 @@
+
+# DESC:
+#	iteratively copies a block of memory
+#	parameters:
+#		len - length of memory to be copied (bytes)
+#		src - starting address of source memory
+#		dst - starting address of destination
+
+.pos 0
+	irmovq	Stack, %rsp		# move Stack to stack ptr
+	rrmovq	%rsp, %rbp		# copy stack ptr to frame ptr
+	jmp main				# go to main program
+
+.align 8
+src:
+	.quad 0x001
+	.quad 0x002
+	.quad 0x004
+dest:
+	.quad 0x111
+	.quad 0x222
+	.quad 0x333
+
+main:
+	irmovq	$3, %rax		# push len
+	pushq	%rax
+	irmovq	dest, %rax		# push dest
+	pushq	%rax
+	irmovq	src, %rax		# push src
+	pushq	%rax
+	call	copy_block
+	halt
+
+copy_block:
+	pushq	%rbp
+	rrmovq	%rsp, %rbp
+	xorq	%rax, %rax		# %rax = result = 0
+	mrmovq	16(%rbp), %rbx	# %rbx = src
+	mrmovq	24(%rbp), %rcx	# %rcx = dest
+	mrmovq	32(%rbp), %rdx	# %rdx = len
+	andq	%rdx, %rdx		# test if len == 0
+	jne loop				# if 0, goto finish
+loop:
+	mrmovq	(%rbx), %rsi	# %rsi = val = *src
+	rmmovq	%rsi, (%rcx)	# *dest = val
+	irmovq	$8, %rdi
+	addq	%rdi, %rbx		# increment src
+	addq	%rdi, %rcx		# increment dest
+	xorq	%rsi, %rax		# result = result ^ val
+	irmovq	$1, %rdi
+	subq	%rdi, %rdx		# decrement len
+	jne loop				# if len == 0, goto finish
+finish:
+	rrmovq	%rbp, %rsp
+	popq	%rbp
+	ret
+
+.pos 0x200
+Stack:

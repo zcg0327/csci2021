@@ -1,0 +1,41 @@
+                            | #initial code 
+0x000: 30f40001000000000000 | 	irmovq Stack,%rsp 
+0x00a: 2045                 | 	rrmovq %rsp,%rbp 
+0x00c: 30f72800000000000000 | 	irmovq ele1, %rdi 
+0x016: a07f                 | 	pushq %rdi 
+0x018: 805800000000000000   | 	call sum_list 
+0x021: 00                   | 	halt 
+                            | 							
+                            | # linked list from handout
+0x028:                      | .align 8
+0x028:                      | ele1: 
+0x028: 0a00000000000000     | 	.quad 0x00a 
+0x030: 3800000000000000     | 	.quad ele2 
+0x038:                      | ele2: 
+0x038: b000000000000000     | 	.quad 0x0b0 
+0x040: 4800000000000000     | 	.quad ele3 
+0x048:                      | ele3: 
+0x048: 000c000000000000     | 	.quad 0xc00 
+0x050: 0000000000000000     | 	.quad 0 
+                            | 												 
+0x058:                      | sum_list: 
+0x058: a05f                 | 	pushq %rbp				# callee-save %rbp 
+0x05a: 6300                 | 	xorq %rax,%rax			# %rax = val = 0 
+0x05c: 2045                 | 	rrmovq %rsp,%rbp		# set %rbp
+0x05e: 50751000000000000000 | 	mrmovq 16(%rbp),%rdi	# %rdi = ls (fetch from stack)
+0x068: 708900000000000000   | 	jmp test
+0x071:                      | loop:
+0x071: 50670000000000000000 | 	mrmovq (%rdi),%rsi		# %rsi = temp = ls->val 
+0x07b: 6060                 | 	addq %rsi,%rax			# val += temp
+0x07d: 50770800000000000000 | 	mrmovq 8(%rdi),%rdi		# ls = ls->next 
+0x087: 6277                 | 	andq %rdi,%rdi			# test if ls == 0
+0x089:                      | test:
+0x089: 6277                 | 	andq %rdi, %rdi			# test if ls == 0
+0x08b: 747100000000000000   | 	jne loop				# if 0, goto done
+                            | 							# if not, goto loop
+                            | # finish: 
+0x094: 2054                 | 	rrmovq %rbp,%rsp		# recover %rsp
+0x096: b05f                 | 	popq %rbp				# recover %rbp 
+0x098: 90                   | 	ret						# return
+0x100:                      | .pos 0x100 
+0x100:                      | Stack:

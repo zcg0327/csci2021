@@ -1,0 +1,248 @@
+                            | #######################################################################
+                            | # Test for copying block of size 4;
+                            | #######################################################################
+0x000:                      |   .pos 0
+0x000: 30f4d004000000000000 | main:  irmovq Stack, %rsp    # Set up stack pointer
+                            | 
+                            |   # Set up arguments for copy function and then invoke it
+0x00a: 30f20400000000000000 |   irmovq $4, %rdx    # src and dst have 4 elements
+0x014: 30f62804000000000000 |   irmovq dest, %rsi  # dst array
+0x01e: 30f7f803000000000000 |   irmovq src, %rdi  # src array
+0x028: 803200000000000000   |   call ncopy     
+0x031: 00                   |   halt      # should halt with num nonzeros in %rax
+0x032:                      | StartFun:
+                            | #/* $begin ncopy-ys */
+                            | ##################################################################
+                            | # ncopy.ys - Copy a src block of len words to dst.
+                            | # Return the number of negative words (<0) contained in src.
+                            | #
+                            | # modified by Brady Olson 11/10/16
+                            | #
+                            | # 1.	I used loop unrolling to increase the number of the number
+                            | #		of instructions per iteration. This takes a minor step in
+                            | #		reducing data dependencies. Note: I used an arbitrary size
+                            | #		of 10 elements per iteration since this seemed to be the
+                            | #		maximum allowed by file size.
+                            | # 2.	Expanding on the loop unrolling principles, I used two
+                            | #		temp registers (%r10 for src[i] and %r9 for src[i+1]).
+                            | #		This reduces bubbles in the frequent instruction sequence
+                            | #		of mrmov and rmmov by adding instructions between. This
+                            | #		costs one extra register, but eliminates several nops per
+                            | #		element.
+                            | # 3.	Using the iadd instruction from part (b) eliminates the
+                            | #		irmov add sequence from the original version. This is both
+                            | #		more effective in speed and register usage.
+                            | #		
+                            | #
+                            | ##################################################################
+                            | # Do not modify this portion
+                            | # Function prologue.
+                            | # %rdi = src, %rsi = dst, %rdx = len
+0x032:                      | ncopy:
+                            | 
+                            | ##################################################################
+                            |  # data initialization / setup
+0x032: 6300                 | 	xorq	%rax, %rax		# %rax = count <- 0
+0x034: 6222                 | 	andq	%rdx, %rdx		# test if len < 0
+0x036: 71a103000000000000   | 	jle		Done			# if so, jump to end
+0x03f: c0f2f6ffffffffffffff | 	iaddq	$-10, %rdx		# len -= 10
+0x049: 721302000000000000   | 	jl		Adjust			# if len now < 0 (ie. len < 10)
+                            | 							# go to adjustment - skip loop
+                            | 
+0x052:                      | Loop:
+0x052: 50a70000000000000000 | 	mrmovq	(%rdi), %r10	# %r10 <- src[0]
+0x05c: 50970800000000000000 | 	mrmovq	8(%rdi), %r9	# %r9  <- src[1]
+0x066: 40a60000000000000000 | 	rmmovq	%r10, (%rsi)	# dst[0] <- src[0]
+0x070: 62aa                 | 	andq	%r10, %r10		# test if src[0] >= 0
+0x072: 758500000000000000   | 	jge		Npos1			# if so, go to next element
+0x07b: c0f00100000000000000 | 	iaddq	$1, %rax		# if not, count += 1
+0x085:                      | Npos1:
+0x085: 40960800000000000000 | 	rmmovq	%r9, 8(%rsi)	# dst[1] <- src[1]
+0x08f: 6299                 | 	andq	%r9, %r9		# test if src[1] >= 0
+0x091: 75a400000000000000   | 	jge		Npos2			# if so, go to next element
+0x09a: c0f00100000000000000 | 	iaddq	$1, %rax		# if not, count +=1
+0x0a4:                      | Npos2:
+0x0a4: 50a71000000000000000 | 	mrmovq	16(%rdi), %r10	# %r10 <- src[2]
+0x0ae: 50971800000000000000 | 	mrmovq	24(%rdi), %r9	# %r9  <- src[3]
+0x0b8: 40a61000000000000000 | 	rmmovq	%r10, 16(%rsi)	# dst[2] <- src[2]
+0x0c2: 62aa                 | 	andq	%r10, %r10		# test if src[2] >= 0
+0x0c4: 75d700000000000000   | 	jge		Npos3			# if so, go to next element
+0x0cd: c0f00100000000000000 | 	iaddq	$1, %rax		# if not, count += 1
+0x0d7:                      | Npos3:
+0x0d7: 40961800000000000000 | 	rmmovq	%r9, 24(%rsi)	# dst[3] <- src[3]
+0x0e1: 6299                 | 	andq	%r9, %r9		# test if src[3] >= 0
+0x0e3: 75f600000000000000   | 	jge		Npos4			# if so, go to next element
+0x0ec: c0f00100000000000000 | 	iaddq	$1, %rax		# if not, count += 1
+0x0f6:                      | Npos4:
+0x0f6: 50a72000000000000000 | 	mrmovq	32(%rdi), %r10	# %r10 <- src[4]
+0x100: 50972800000000000000 | 	mrmovq	40(%rdi), %r9	# ...
+0x10a: 40a62000000000000000 | 	rmmovq	%r10, 32(%rsi)
+0x114: 62aa                 | 	andq	%r10, %r10
+0x116: 752901000000000000   | 	jge		Npos5
+0x11f: c0f00100000000000000 | 	iaddq	$1, %rax
+0x129:                      | Npos5:
+0x129: 40962800000000000000 | 	rmmovq	%r9, 40(%rsi)
+0x133: 6299                 | 	andq	%r9, %r9
+0x135: 754801000000000000   | 	jge		Npos6
+0x13e: c0f00100000000000000 | 	iaddq	$1, %rax
+0x148:                      | Npos6:
+0x148: 50a73000000000000000 | 	mrmovq	48(%rdi), %r10
+0x152: 50973800000000000000 | 	mrmovq	56(%rdi), %r9
+0x15c: 40a63000000000000000 | 	rmmovq	%r10, 48(%rsi)
+0x166: 62aa                 | 	andq	%r10, %r10
+0x168: 757b01000000000000   | 	jge		Npos7
+0x171: c0f00100000000000000 | 	iaddq	$1, %rax
+0x17b:                      | Npos7:
+0x17b: 40963800000000000000 | 	rmmovq	%r9, 56(%rsi)
+0x185: 6299                 | 	andq	%r9, %r9
+0x187: 759a01000000000000   | 	jge		Npos8
+0x190: c0f00100000000000000 | 	iaddq	$1, %rax
+0x19a:                      | Npos8:
+0x19a: 50a74000000000000000 | 	mrmovq	64(%rdi), %r10
+0x1a4: 50974800000000000000 | 	mrmovq	72(%rdi), %r9
+0x1ae: 40a64000000000000000 | 	rmmovq	%r10, 64(%rsi)
+0x1b8: 62aa                 | 	andq	%r10, %r10
+0x1ba: 75cd01000000000000   | 	jge		Npos9
+0x1c3: c0f00100000000000000 | 	iaddq	$1, %rax
+0x1cd:                      | Npos9:
+0x1cd: 40964800000000000000 | 	rmmovq	%r9, 72(%rsi)
+0x1d7: 6299                 | 	andq	%r9, %r9
+0x1d9: 75ec01000000000000   | 	jge		Cond
+0x1e2: c0f00100000000000000 | 	iaddq	$1, %rax
+0x1ec:                      | Cond:
+0x1ec: c0f75000000000000000 | 	iaddq	$80, %rdi		# src += 10
+0x1f6: c0f65000000000000000 | 	iaddq	$80, %rsi		# dst += 10
+0x200: c0f2f6ffffffffffffff | 	iaddq	$-10, %rdx		# len -= 10
+0x20a: 755200000000000000   | 	jge		Loop			# if len now >= 0, go to top of loop
+0x213:                      | Adjust:
+0x213: c0f20a00000000000000 | 	iaddq	$10, %rdx		# add 10 back to len
+0x21d: 6022                 | 	addq	%rdx, %rdx
+0x21f: 6022                 | 	addq	%rdx, %rdx
+0x221: 6022                 | 	addq	%rdx, %rdx
+0x223: 5022a203000000000000 | 	mrmovq	JT(%rdx), %rdx	# %rdx = JT + 8*len
+                            | 
+0x22d: a02f                 | 	pushq	%rdx			# instruction sequence to essentially
+0x22f: 90                   | 	ret						# jump to %rdx in memory and return
+                            | 
+                            | # body to copy & check remaining  < 10 elements
+0x230:                      | Xpos9:
+0x230: 50a74000000000000000 | 	mrmovq	64(%rdi), %r10	# %r10 = val <- src[9]
+0x23a: 40a64000000000000000 | 	rmmovq	%r10, 64(%rsi)	# dst[9] <- src[9]
+0x244: 62aa                 | 	andq	%r10, %r10		# test if src[9] >= 0
+0x246: 755902000000000000   | 	jge		Xpos8			# if so, go to next element
+0x24f: c0f00100000000000000 | 	iaddq	$1, %rax		# if not, count+=1
+0x259:                      | Xpos8:
+0x259: 50a73800000000000000 | 	mrmovq	56(%rdi), %r10	# %r10 = val <- src[8]
+0x263: 40a63800000000000000 | 	rmmovq	%r10, 56(%rsi)	# ...
+0x26d: 62aa                 | 	andq	%r10, %r10
+0x26f: 758202000000000000   | 	jge		Xpos7
+0x278: c0f00100000000000000 | 	iaddq	$1, %rax
+0x282:                      | Xpos7:
+0x282: 50a73000000000000000 | 	mrmovq	48(%rdi), %r10
+0x28c: 40a63000000000000000 | 	rmmovq	%r10, 48(%rsi)
+0x296: 62aa                 | 	andq	%r10, %r10
+0x298: 75ab02000000000000   | 	jge		Xpos6
+0x2a1: c0f00100000000000000 | 	iaddq	$1, %rax
+0x2ab:                      | Xpos6:
+0x2ab: 50a72800000000000000 | 	mrmovq	40(%rdi), %r10
+0x2b5: 40a62800000000000000 | 	rmmovq	%r10, 40(%rsi)
+0x2bf: 62aa                 | 	andq	%r10, %r10
+0x2c1: 75d402000000000000   | 	jge		Xpos5
+0x2ca: c0f00100000000000000 | 	iaddq	$1, %rax
+0x2d4:                      | Xpos5:
+0x2d4: 50a72000000000000000 | 	mrmovq	32(%rdi), %r10
+0x2de: 40a62000000000000000 | 	rmmovq	%r10, 32(%rsi)
+0x2e8: 62aa                 | 	andq	%r10, %r10
+0x2ea: 75fd02000000000000   | 	jge		Xpos4
+0x2f3: c0f00100000000000000 | 	iaddq	$1, %rax
+0x2fd:                      | Xpos4:
+0x2fd: 50a71800000000000000 | 	mrmovq	24(%rdi), %r10
+0x307: 40a61800000000000000 | 	rmmovq	%r10, 24(%rsi)
+0x311: 62aa                 | 	andq	%r10, %r10
+0x313: 752603000000000000   | 	jge		Xpos3
+0x31c: c0f00100000000000000 | 	iaddq	$1, %rax
+0x326:                      | Xpos3:
+0x326: 50a71000000000000000 | 	mrmovq	16(%rdi), %r10
+0x330: 40a61000000000000000 | 	rmmovq	%r10, 16(%rsi)
+0x33a: 62aa                 | 	andq	%r10, %r10
+0x33c: 754f03000000000000   | 	jge		Xpos2
+0x345: c0f00100000000000000 | 	iaddq	$1, %rax
+0x34f:                      | Xpos2:
+0x34f: 50a70800000000000000 | 	mrmovq	8(%rdi), %r10
+0x359: 40a60800000000000000 | 	rmmovq	%r10, 8(%rsi)
+0x363: 62aa                 | 	andq	%r10, %r10
+0x365: 757803000000000000   | 	jge		Xpos1
+0x36e: c0f00100000000000000 | 	iaddq	$1, %rax
+0x378:                      | Xpos1:
+0x378: 50a70000000000000000 | 	mrmovq	(%rdi), %r10
+0x382: 40a60000000000000000 | 	rmmovq	%r10, (%rsi)
+0x38c: 62aa                 | 	andq	%r10, %r10
+0x38e: 75a103000000000000   | 	jge		Xpos0
+0x397: c0f00100000000000000 | 	iaddq	$1, %rax
+0x3a1:                      | Xpos0:
+                            | # Do not modify the following section of code
+                            | # Function epilogue.
+0x3a1:                      | Done:
+0x3a1: 90                   | 	ret
+                            | ##################################################################
+                            | 
+                            | # jump table for number of remaining elements
+                            | # jump to Xposi if there are i elements remaining to copy & check
+0x3a2: a103000000000000     | JT:	.quad Xpos0
+0x3aa: 7803000000000000     | 	.quad Xpos1
+0x3b2: 4f03000000000000     | 	.quad Xpos2
+0x3ba: 2603000000000000     | 	.quad Xpos3
+0x3c2: fd02000000000000     | 	.quad Xpos4
+0x3ca: d402000000000000     | 	.quad Xpos5
+0x3d2: ab02000000000000     | 	.quad Xpos6
+0x3da: 8202000000000000     | 	.quad Xpos7
+0x3e2: 5902000000000000     | 	.quad Xpos8
+0x3ea: 3002000000000000     | 	.quad Xpos9
+                            | 
+                            | # Keep the following label at the end of your function
+0x3f2:                      | End:
+                            | #/* $end ncopy-ys */
+0x3f2:                      | EndFun:
+                            | 
+                            | ###############################
+                            | # Source and destination blocks 
+                            | ###############################
+0x3f8:                      |   .align 8
+0x3f8:                      | src:
+0x3f8: 0100000000000000     | 	.quad 1
+0x400: 0200000000000000     | 	.quad 2
+0x408: fdffffffffffffff     | 	.quad -3
+0x410: fcffffffffffffff     | 	.quad -4
+0x418: fadebc0000000000     |   .quad 0xbcdefa # This shouldn't get moved
+                            | 
+0x420:                      |   .align 16
+0x420:                      | Predest:
+0x420: fadebc0000000000     |   .quad 0xbcdefa
+0x428:                      | dest:
+0x428: abefcd0000000000     | 	.quad 0xcdefab
+0x430: abefcd0000000000     | 	.quad 0xcdefab
+0x438: abefcd0000000000     | 	.quad 0xcdefab
+0x440: abefcd0000000000     | 	.quad 0xcdefab
+0x448:                      | Postdest:
+0x448: bcfade0000000000     |   .quad 0xdefabc
+                            | 
+0x450:                      | .align 8
+                            | # Run time stack
+0x450: 0000000000000000     |   .quad 0
+0x458: 0000000000000000     |   .quad 0
+0x460: 0000000000000000     |   .quad 0
+0x468: 0000000000000000     |   .quad 0
+0x470: 0000000000000000     |   .quad 0
+0x478: 0000000000000000     |   .quad 0
+0x480: 0000000000000000     |   .quad 0
+0x488: 0000000000000000     |   .quad 0
+0x490: 0000000000000000     |   .quad 0
+0x498: 0000000000000000     |   .quad 0
+0x4a0: 0000000000000000     |   .quad 0
+0x4a8: 0000000000000000     |   .quad 0
+0x4b0: 0000000000000000     |   .quad 0
+0x4b8: 0000000000000000     |   .quad 0
+0x4c0: 0000000000000000     |   .quad 0
+0x4c8: 0000000000000000     |   .quad 0
+                            | 
+0x4d0:                      | Stack:

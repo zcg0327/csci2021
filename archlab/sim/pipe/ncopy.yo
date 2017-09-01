@@ -1,0 +1,170 @@
+                            | #/* $begin ncopy-ys */
+                            | ##################################################################
+                            | # ncopy.ys - Copy a src block of len words to dst.
+                            | # Return the number of negative words (<0) contained in src.
+                            | #
+                            | # modified by Brady Olson 11/10/16
+                            | #
+                            | # Describe how and why you modified the baseline code.
+                            | #
+                            | ##################################################################
+                            | # Do not modify this portion
+                            | # Function prologue.
+                            | # %rdi = src, %rsi = dst, %rdx = len
+0x000:                      | ncopy:
+                            | 
+                            | ##################################################################
+                            | # You can modify this portion
+                            |   # Loop header
+0x000: 6300                 | 	xorq	%rax, %rax
+0x002: 6222                 | 	andq	%rdx, %rdx
+0x004: 716f03000000000000   | 	jle		Done
+0x00d: c0f2f6ffffffffffffff | 	iaddq	$-10, %rdx
+0x017: 72e101000000000000   | 	jl		Adjust
+                            | 
+0x020:                      | Loop:
+0x020: 50a70000000000000000 | 	mrmovq	(%rdi), %r10
+0x02a: 40a60000000000000000 | 	rmmovq	%r10, (%rsi)
+0x034: 62aa                 | 	andq	%r10, %r10
+0x036: 754900000000000000   | 	jge		Npos1
+0x03f: c0f00100000000000000 | 	iaddq	$1, %rax
+0x049:                      | Npos1:
+0x049: 50a70800000000000000 | 	mrmovq	8(%rdi), %r10
+0x053: 40a60800000000000000 | 	rmmovq	%r10, 8(%rsi)
+0x05d: 62aa                 | 	andq	%r10, %r10
+0x05f: 757200000000000000   | 	jge		Npos2
+0x068: c0f00100000000000000 | 	iaddq	$1, %rax
+0x072:                      | Npos2:
+0x072: 50a71000000000000000 | 	mrmovq	16(%rdi), %r10
+0x07c: 40a61000000000000000 | 	rmmovq	%r10, 16(%rsi)
+0x086: 62aa                 | 	andq	%r10, %r10
+0x088: 759b00000000000000   | 	jge		Npos3
+0x091: c0f00100000000000000 | 	iaddq	$1, %rax
+0x09b:                      | Npos3:
+0x09b: 50a71800000000000000 | 	mrmovq	24(%rdi), %r10
+0x0a5: 40a61800000000000000 | 	rmmovq	%r10, 24(%rsi)
+0x0af: 62aa                 | 	andq	%r10, %r10
+0x0b1: 75c400000000000000   | 	jge		Npos4
+0x0ba: c0f00100000000000000 | 	iaddq	$1, %rax
+0x0c4:                      | Npos4:
+0x0c4: 50a72000000000000000 | 	mrmovq	32(%rdi), %r10
+0x0ce: 40a62000000000000000 | 	rmmovq	%r10, 32(%rsi)
+0x0d8: 62aa                 | 	andq	%r10, %r10
+0x0da: 75ed00000000000000   | 	jge		Npos5
+0x0e3: c0f00100000000000000 | 	iaddq	$1, %rax
+0x0ed:                      | Npos5:
+0x0ed: 50a72800000000000000 | 	mrmovq	40(%rdi), %r10
+0x0f7: 40a62800000000000000 | 	rmmovq	%r10, 40(%rsi)
+0x101: 62aa                 | 	andq	%r10, %r10
+0x103: 751601000000000000   | 	jge		Npos6
+0x10c: c0f00100000000000000 | 	iaddq	$1, %rax
+0x116:                      | Npos6:
+0x116: 50a73000000000000000 | 	mrmovq	48(%rdi), %r10
+0x120: 40a63000000000000000 | 	rmmovq	%r10, 48(%rsi)
+0x12a: 62aa                 | 	andq	%r10, %r10
+0x12c: 753f01000000000000   | 	jge		Npos7
+0x135: c0f00100000000000000 | 	iaddq	$1, %rax
+0x13f:                      | Npos7:
+0x13f: 50a73800000000000000 | 	mrmovq	56(%rdi), %r10
+0x149: 40a63800000000000000 | 	rmmovq	%r10, 56(%rsi)
+0x153: 62aa                 | 	andq	%r10, %r10
+0x155: 756801000000000000   | 	jge		Npos8
+0x15e: c0f00100000000000000 | 	iaddq	$1, %rax
+0x168:                      | Npos8:
+0x168: 50a74000000000000000 | 	mrmovq	64(%rdi), %r10
+0x172: 40a64000000000000000 | 	rmmovq	%r10, 64(%rsi)
+0x17c: 62aa                 | 	andq	%r10, %r10
+0x17e: 759101000000000000   | 	jge		Npos9
+0x187: c0f00100000000000000 | 	iaddq	$1, %rax
+0x191:                      | Npos9:
+0x191: 50a74800000000000000 | 	mrmovq	72(%rdi), %r10
+0x19b: 40a64800000000000000 | 	rmmovq	%r10, 72(%rsi)
+0x1a5: 62aa                 | 	andq	%r10, %r10
+0x1a7: 75ba01000000000000   | 	jge		Cond
+0x1b0: c0f00100000000000000 | 	iaddq	$1, %rax
+0x1ba:                      | Cond:
+0x1ba: c0f75000000000000000 | 	iaddq	$80, %rdi
+0x1c4: c0f65000000000000000 | 	iaddq	$80, %rsi
+0x1ce: c0f2f6ffffffffffffff | 	iaddq	$-10, %rdx
+0x1d8: 752000000000000000   | 	jge		Loop
+0x1e1:                      | Adjust:
+0x1e1: c0f20a00000000000000 | 	iaddq	$10, %rdx
+0x1eb: 6022                 | 	addq	%rdx, %rdx
+0x1ed: 6022                 | 	addq	%rdx, %rdx
+0x1ef: 6022                 | 	addq	%rdx, %rdx
+0x1f1: 50227003000000000000 | 	mrmovq	JT(%rdx), %rdx
+0x1fb: a02f                 | 	pushq	%rdx
+0x1fd: 90                   | 	ret
+0x1fe:                      | Xpos9:
+0x1fe: 50a74000000000000000 | 	mrmovq	64(%rdi), %r10
+0x208: 40a64000000000000000 | 	rmmovq	%r10, 64(%rsi)
+0x212: 62aa                 | 	andq	%r10, %r10
+0x214: 752702000000000000   | 	jge		Xpos8
+0x21d: c0f00100000000000000 | 	iaddq	$1, %rax
+0x227:                      | Xpos8:
+0x227: 50a73800000000000000 | 	mrmovq	56(%rdi), %r10
+0x231: 40a63800000000000000 | 	rmmovq	%r10, 56(%rsi)
+0x23b: 62aa                 | 	andq	%r10, %r10
+0x23d: 755002000000000000   | 	jge		Xpos7
+0x246: c0f00100000000000000 | 	iaddq	$1, %rax
+0x250:                      | Xpos7:
+0x250: 50a73000000000000000 | 	mrmovq	48(%rdi), %r10
+0x25a: 40a63000000000000000 | 	rmmovq	%r10, 48(%rsi)
+0x264: 62aa                 | 	andq	%r10, %r10
+0x266: 757902000000000000   | 	jge		Xpos6
+0x26f: c0f00100000000000000 | 	iaddq	$1, %rax
+0x279:                      | Xpos6:
+0x279: 50a72800000000000000 | 	mrmovq	40(%rdi), %r10
+0x283: 40a62800000000000000 | 	rmmovq	%r10, 40(%rsi)
+0x28d: 62aa                 | 	andq	%r10, %r10
+0x28f: 75a202000000000000   | 	jge		Xpos5
+0x298: c0f00100000000000000 | 	iaddq	$1, %rax
+0x2a2:                      | Xpos5:
+0x2a2: 50a72000000000000000 | 	mrmovq	32(%rdi), %r10
+0x2ac: 40a62000000000000000 | 	rmmovq	%r10, 32(%rsi)
+0x2b6: 62aa                 | 	andq	%r10, %r10
+0x2b8: 75cb02000000000000   | 	jge		Xpos4
+0x2c1: c0f00100000000000000 | 	iaddq	$1, %rax
+0x2cb:                      | Xpos4:
+0x2cb: 50a71800000000000000 | 	mrmovq	24(%rdi), %r10
+0x2d5: 40a61800000000000000 | 	rmmovq	%r10, 24(%rsi)
+0x2df: 62aa                 | 	andq	%r10, %r10
+0x2e1: 75f402000000000000   | 	jge		Xpos3
+0x2ea: c0f00100000000000000 | 	iaddq	$1, %rax
+0x2f4:                      | Xpos3:
+0x2f4: 50a71000000000000000 | 	mrmovq	16(%rdi), %r10
+0x2fe: 40a61000000000000000 | 	rmmovq	%r10, 16(%rsi)
+0x308: 62aa                 | 	andq	%r10, %r10
+0x30a: 751d03000000000000   | 	jge		Xpos2
+0x313: c0f00100000000000000 | 	iaddq	$1, %rax
+0x31d:                      | Xpos2:
+0x31d: 50a70800000000000000 | 	mrmovq	8(%rdi), %r10
+0x327: 40a60800000000000000 | 	rmmovq	%r10, 8(%rsi)
+0x331: 62aa                 | 	andq	%r10, %r10
+0x333: 754603000000000000   | 	jge		Xpos1
+0x33c: c0f00100000000000000 | 	iaddq	$1, %rax
+0x346:                      | Xpos1:
+0x346: 50a70000000000000000 | 	mrmovq	(%rdi), %r10
+0x350: 40a60000000000000000 | 	rmmovq	%r10, (%rsi)
+0x35a: 62aa                 | 	andq	%r10, %r10
+0x35c: 756f03000000000000   | 	jge		Xpos0
+0x365: c0f00100000000000000 | 	iaddq	$1, %rax
+0x36f:                      | Xpos0:
+                            | # Do not modify the following section of code
+                            | # Function epilogue.
+0x36f:                      | Done:
+0x36f: 90                   | 	ret
+                            | ##################################################################
+0x370: 6f03000000000000     | JT:	.quad Xpos0
+0x378: 4603000000000000     | 	.quad Xpos1
+0x380: 1d03000000000000     | 	.quad Xpos2
+0x388: f402000000000000     | 	.quad Xpos3
+0x390: cb02000000000000     | 	.quad Xpos4
+0x398: a202000000000000     | 	.quad Xpos5
+0x3a0: 7902000000000000     | 	.quad Xpos6
+0x3a8: 5002000000000000     | 	.quad Xpos7
+0x3b0: 2702000000000000     | 	.quad Xpos8
+0x3b8: fe01000000000000     | 	.quad Xpos9
+                            | # Keep the following label at the end of your function
+0x3c0:                      | End:
+                            | #/* $end ncopy-ys */
